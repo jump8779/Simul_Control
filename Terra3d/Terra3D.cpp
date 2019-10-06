@@ -30,11 +30,14 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <stdarg.h>		// Header File For Variable Argument Routines	( ADD )
 #include <gl\gl.h>			// Header File For The OpenGL32 Library
 #include <gl\glu.h>			// Header File For The GLu32 Library
-#include <gl\glaux.h>		// Header File For The Glaux Library
+//#include <gl\glaux.h>		// Header File For The Glaux Library
+#include "bmp.h"
 #include <time.h>
-#include <fstream.h>
+#include <fstream>
 #include "bitmap.h"
 #include "glext.h"
+
+using namespace std; // for using ifstream in iosfwd
 
 #pragma warning(disable: 4800)
 #pragma warning(disable: 4305)
@@ -859,7 +862,7 @@ struct MS3DKeyframe
 
 inline bool MilkshapeModel::loadModelData( const char *filename )
 {
-	ifstream inputFile( filename, ios::in | ios::binary | ios::nocreate );
+	ifstream inputFile( filename, ios::in | ios::binary | ios::_Nocreate );
 	if ( inputFile.fail())
 		return false;	// "Couldn't open the model file."
 
@@ -868,7 +871,7 @@ inline bool MilkshapeModel::loadModelData( const char *filename )
 	inputFile.seekg( 0, ios::beg );
 
 	byte *pBuffer = new byte[fileSize];
-	inputFile.read( pBuffer, fileSize );
+	inputFile.read( (char*)pBuffer, fileSize );
 	inputFile.close();
 
 	const byte *pPtr = pBuffer;
