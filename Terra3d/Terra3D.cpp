@@ -25,6 +25,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 
 #include <math.h>		// Header File For Windows
+#include <WinSock2.h> // Header File For Socket 
+// windows.h내의 winsock과의 충돌 에러를 회피하기 위해 WinSock2.h를 먼저 선언
 #include <windows.h>		// Header File For Windows
 #include <stdio.h>			// Header File For Standard Input/Output
 #include <stdarg.h>		// Header File For Variable Argument Routines	( ADD )
@@ -39,10 +41,70 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 using namespace std; // for using ifstream in iosfwd
 
+#pragma comment(lib, "Ws2_32.lib")
 #pragma warning(disable: 4800)
 #pragma warning(disable: 4305)
 #pragma warning(disable: 4244)
 
+#define SERVER_PORT 1024
+typedef struct Joy
+{
+	int x;
+	int y;
+	int z;
+}JOY;
+
+struct socketStruct
+{
+	JOY joy;
+};
+socketStruct RecvSt;
+
+SOCKET s;
+WSADATA wsaData;
+sockaddr_in server_addr, client_addr;
+int len_addr;
+
+#define WM_ASYNC (WM_USER + 1)
+
+BOOL Initsocket(HWND hWnd)
+{
+	AllocConsole();						// Console open
+	freopen("CONOUT$", "w", stdout); 
+
+	WSAStartup(MAKEWORD(2, 2), &wsaData); // error -> return false
+
+	s = socket(PF_INET, SOCK_STREAM, 0); // TCP socket 생성
+
+	if (s == INVALID_SOCKET)
+	{
+		printf("socket creat error.\n");
+		return FALSE;
+	}
+
+	memset(&server_addr, 0, sizeof(server_addr));
+	server_addr.sin_family = AF_INET;
+	server_addr.sin_addr.s_addr = htonl(INADDR_ANY);
+	server_addr.sin_port = htons(SERVER_PORT);
+
+	if (bind(s, (SOCKADDR*)&server_addr, sizeof(server_addr)) == SOCKET_ERROR)
+	{
+		printf("socket bind error.\n");
+		return FALSE;
+	}
+	if (listen(s, 5) == SOCKET_ERROR)
+	{
+		printf("socket listen error.\n");
+		return FALSE;
+	}
+	if (WSAAsyncSelect(s, hWnd, WM_ASYNC, FD_ACCEPT | FD_CLOSE) == SOCKET_ERROR)
+	{
+		printf("WSAAsyncSelect Error : %d\n", WSAGetLastError());
+		return FALSE;
+	}
+	printf("connecting...\n");
+	return TRUE;
+}
 
 GLfloat SCREENWIDTH, SCREENHEIGHT;
 
@@ -2229,58 +2291,95 @@ inline LRESULT CALLBACK WndProc(	HWND	hWnd,			// Handle For This Window
 							WPARAM	wParam,			// Additional Message Information
 							LPARAM	lParam)			// Additional Message Information
 {
-	switch (uMsg)									// Check For Windows Messages
+	if (uMsg == WM_ASYNC)
 	{
-		case WM_ACTIVATE:							// Watch For Window Activate Message
+		if (WSAGETSELECTERROR(lParam))
 		{
-			if (!HIWORD(wParam))					// Check Minimization State
-			{
-				active=TRUE;						// Program Is Active
-			}
-			else
-			{
-				active=FALSE;						// Program Is No Longer Active
-			}
-
-			return 0;								// Return To The Message Loop
+			printf("MSG Error");
+			return 0;
 		}
-
-		case WM_SYSCOMMAND:							// Intercept System Commands
+		switch (WSAGETSELECTEVENT(lParam))
 		{
-			switch (wParam)							// Check System Calls
-			{
-				case SC_SCREENSAVE:					// Screensaver Trying To Start?
-				case SC_MONITORPOWER:				// Monitor Trying To Enter Powersave?
-				return 0;							// Prevent From Happening
-			}
-			break;									// Exit
-		}
-
-		case WM_CLOSE:								// Did We Receive A Close Message?
-		{
-			PostQuitMessage(0);						// Send A Quit Message
-			return 0;								// Jump Back
-		}
-
-		case WM_KEYDOWN:							// Is A Key Being Held Down?
-		{
-			keys[wParam] = TRUE;					// If So, Mark It As TRUE
-			return 0;								// Jump Back
-		}
-
-		case WM_KEYUP:								// Has A Key Been Released?
-		{
-			keys[wParam] = FALSE;					// If So, Mark It As FALSE
-			return 0;								// Jump Back
-		}
-
-		case WM_SIZE:								// Resize The OpenGL Window
-		{
-			ReSizeGLScene(LOWORD(lParam),HIWORD(lParam));  // LoWord=Width, HiWord=Height
-			return 0;								// Jump Back
+		case FD_ACCEPT:
+			len_addr = sizeof(client_addr);
+			s = accept(wParam, (SOCKADDR*)& client_addr, &len_addr);
+			WSAAsyncSelect(s, hWnd, WM_ASYNC, FD_READ | FD_CLOSE);
+			break;
+		case FD_CONNECT:
+			printf("Connecting Success...\n");
+			break;
+		case FD_CLOSE:
+			closesocket(s);
+			s = INVALID_SOCKET;
+			WSACleanup();
+			FreeConsole();
+			break;
+		case FD_READ:
+			recv(s, (char*)& RecvSt, sizeof(RecvSt), 0);
+			keys[wParam] = TRUE;
+			printf("%d\t%d\t%d\n", RecvSt.joy.x, RecvSt.joy.y, RecvSt.joy.z);
+			break;
 		}
 	}
+	else
+	{
+		switch (uMsg)									// Check For Windows Messages
+		{
+			case WM_CREATE:
+			{
+				Initsocket(hWnd);
+				return 0;
+			}
+			case WM_ACTIVATE:							// Watch For Window Activate Message
+			{
+				if (!HIWORD(wParam))					// Check Minimization State
+				{
+					active=TRUE;						// Program Is Active
+				}
+				else
+				{
+					active=FALSE;						// Program Is No Longer Active
+				}
 
+				return 0;								// Return To The Message Loop
+			}
+
+			case WM_SYSCOMMAND:							// Intercept System Commands
+			{
+				switch (wParam)							// Check System Calls
+				{
+					case SC_SCREENSAVE:					// Screensaver Trying To Start?
+					case SC_MONITORPOWER:				// Monitor Trying To Enter Powersave?
+					return 0;							// Prevent From Happening
+				}
+				break;									// Exit
+			}
+
+			case WM_CLOSE:								// Did We Receive A Close Message?
+			{
+				PostQuitMessage(0);						// Send A Quit Message
+				return 0;								// Jump Back
+			}
+
+			case WM_KEYDOWN:							// Is A Key Being Held Down?
+			{
+				keys[wParam] = TRUE;					// If So, Mark It As TRUE
+				return 0;								// Jump Back
+			}
+
+			case WM_KEYUP:								// Has A Key Been Released?
+			{
+				keys[wParam] = FALSE;					// If So, Mark It As FALSE
+				return 0;								// Jump Back
+			}
+
+			case WM_SIZE:								// Resize The OpenGL Window
+			{
+				ReSizeGLScene(LOWORD(lParam),HIWORD(lParam));  // LoWord=Width, HiWord=Height
+				return 0;								// Jump Back
+			}
+		}
+	}
 	// Pass All Unhandled Messages To DefWindowProc
 	return DefWindowProc(hWnd,uMsg,wParam,lParam);
 }
@@ -2298,7 +2397,7 @@ int WINAPI WinMain(	HINSTANCE	hInstance,			// Instance
 		return 0;													// If Model Didn't Load Quit
 	}
 	
-  MSG		msg;									// Windows Message Structure
+  	MSG		msg;									// Windows Message Structure
 	BOOL	done=FALSE;								// Bool Variable To Exit Loop
    
   fullscreen = true;
@@ -2533,5 +2632,5 @@ int WINAPI WinMain(	HINSTANCE	hInstance,			// Instance
 
 	// Shutdown
 	KillGLWindow();									// Kill The Window
-  return (msg.wParam);							// Exit The Program
+	return (msg.wParam);							// Exit The Program
 }
