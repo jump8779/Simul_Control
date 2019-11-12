@@ -2416,18 +2416,18 @@ int WINAPI WinMain(	HINSTANCE	hInstance,			// Instance
   /*********************************************/ 
 
   // Create Our OpenGL Window
-	if (!CreateGLWindow("Terra3D",800,600,32,fullscreen))
+	if (!CreateGLWindow("Terra3D", 800, 600, 32, fullscreen))
 	{
 		return 0;									// Quit If Window Was Not Created
 	}
 
-	while(!done)									// Loop That Runs While done=FALSE
+	while (!done)									// Loop That Runs While done=FALSE
 	{
-		if (PeekMessage(&msg,NULL,0,0,PM_REMOVE))	// Is There A Message Waiting?
+		if (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))	// Is There A Message Waiting?
 		{
-			if (msg.message==WM_QUIT)				// Have We Received A Quit Message?
+			if (msg.message == WM_QUIT)				// Have We Received A Quit Message?
 			{
-				done=TRUE;							// If So done=TRUE
+				done = TRUE;							// If So done=TRUE
 			}
 			else									// If Not, Deal With Window Messages
 			{
@@ -2436,196 +2436,197 @@ int WINAPI WinMain(	HINSTANCE	hInstance,			// Instance
 			}
 		}
 		else										// If There Are No Messages
-		{		
-      // Draw The Scene.  Watch For ESC Key And Quit Messages From DrawGLScene()
+		{
+
+			// Draw The Scene.  Watch For ESC Key And Quit Messages From DrawGLScene()
 			if ((active && !DrawGLScene()) || keys[VK_ESCAPE])	// Active?  Was There A Quit Received?
 			{
-				done=TRUE;							// ESC or DrawGLScene Signalled A Quit
+				done = TRUE;							// ESC or DrawGLScene Signalled A Quit
 			}
 			else									// Not Time To Quit, Update Screen
 			{
 				SwapBuffers(hDC);					// Swap Buffers (Double Buffering)
-				
-				if (keys['1'])
-				{
-				  _Throttle = 1;
-				}
-        else if (keys['2'])
-				{
-				  _Throttle = 2;
-				}
-        else if (keys['3'])
-				{
-				  _Throttle = 3;
-				}
-        else if (keys['4'])
-				{
-				  _Throttle = 4;
-				}
-        else if (keys['5'])
-				{
-				  _Throttle = 5;
-				}
-        else if (keys['6'])
-				{
-				  _Throttle = 6;
-				}
-        else if (keys['7'])
-				{
-				  _Throttle = 7;
-				}
-        else if (keys['8'])
-				{
-				  _Throttle = 8;
-				}
-        else if (keys['9'])
-				{
-				  _Throttle = 9;
-				}
-        else if (keys['0'])
-				{				  
-				  _Throttle = 15;  
-				}
-                
-				if (keys[VK_UP])
-        {
-					pitch -= 15 / (ABS(Speed)+1);
-			  }
-        else if (keys[VK_DOWN])
-        {
-					pitch += 15 / (ABS(Speed)+1);
-			  }
 
-        if (keys[VK_LEFT])
-        {
-				  zprot += 5/(ABS(Speed)+1);
-          Throttle*=.99;               
-        }
-        else if (keys[VK_RIGHT])
-        {
-  				zprot -= 5/(ABS(Speed)+1);
-          Throttle*=.99;
-        }
-				
+				if (keys['1'] || (RecvSt.joy.z >= 58977 && RecvSt.joy.z < 65536))
+				{
+					_Throttle = 1;
+				}
+				else if (keys['2'] || (RecvSt.joy.z >= 52424 && RecvSt.joy.z < 58977))
+				{
+					_Throttle = 2;
+				}
+				else if (keys['3'] || (RecvSt.joy.z >= 45871 && RecvSt.joy.z < 52424))
+				{
+					_Throttle = 3;
+				}
+				else if (keys['4'] || (RecvSt.joy.z >= 39318 && RecvSt.joy.z < 45871))
+				{
+					_Throttle = 4;
+				}
+				else if (keys['5'] || (RecvSt.joy.z >= 32765 && RecvSt.joy.z < 39318))
+				{
+					_Throttle = 5;
+				}
+				else if (keys['6'] || (RecvSt.joy.z >= 26212 && RecvSt.joy.z < 32765))
+				{
+					_Throttle = 6;
+				}
+				else if (keys['7'] || (RecvSt.joy.z >= 19659 && RecvSt.joy.z < 26212))
+				{
+					_Throttle = 7;
+				}
+				else if (keys['8'] || (RecvSt.joy.z >= 13106 && RecvSt.joy.z < 19659))
+				{
+					_Throttle = 8;
+				}
+				else if (keys['9'] || (RecvSt.joy.z >= 6553 && RecvSt.joy.z < 13106))
+				{
+					_Throttle = 9;
+				}
+				else if (keys['0'] || (RecvSt.joy.z >= 0 && RecvSt.joy.z < 6553))
+				{
+					_Throttle = 15;
+				}
+
+				if (keys[VK_UP] || (RecvSt.joy.y >= 0 && RecvSt.joy.y < 32767))
+				{
+					pitch -= 15 / (ABS(Speed) + 1);
+				}
+				else if (keys[VK_DOWN] || (RecvSt.joy.y > 32767 && RecvSt.joy.y <= 65535))
+				{
+					pitch += 15 / (ABS(Speed) + 1);
+				}
+
+				if (keys[VK_LEFT] || (RecvSt.joy.x >= 0 && RecvSt.joy.x < 32767))
+				{
+					zprot += 5 / (ABS(Speed) + 1);
+					Throttle *= .99;
+				}
+				else if (keys[VK_RIGHT] || (RecvSt.joy.x > 32767 && RecvSt.joy.x <= 65535))
+				{
+					zprot -= 5 / (ABS(Speed) + 1);
+					Throttle *= .99;
+				}
+
 				if (_Throttle == 15)
 				{
-				  Afterburner = true;
+					Afterburner = true;
 				}
-				else 
+				else
 				{
-				  Afterburner = false;
+					Afterburner = false;
 				}
 
-			  zprot*=0.935f;
-				heading += zprot/3;
-				yaw += zprot/5;
-				yaw*=.95f; 
+				zprot *= 0.935f;
+				heading += zprot / 3;
+				yaw += zprot / 5;
+				yaw *= .95f;
 
-				Throttlei += (_Throttle-Throttle)/10;
+				Throttlei += (_Throttle - Throttle) / 10;
 				Throttlei *= .9f;
-				Throttle += Throttlei/10;
-				
-				GLfloat MAX_Speed = (sqrt(Throttle+1)) * 10; 
-				Speedi += MAX_Speed-Speed;
+				Throttle += Throttlei / 10;
+
+				GLfloat MAX_Speed = (sqrt(Throttle + 1)) * 10;
+				Speedi += MAX_Speed - Speed;
 				Speedi *= .9f;
-				Speed += Speedi/1000;
-				XP = -(GLfloat)sin(heading*piover180) * Speed;	
-				YP = -(GLfloat)sin(pitch*piover180) * Speed;
-				ZP = -(GLfloat)cos(heading*piover180) * Speed;
-        GLfloat overallspeed = Hypot(Hypot(XP,YP),ZP) / (ABS(Speed)+1);  				
-				
+				Speed += Speedi / 1000;
+				XP = -(GLfloat)sin(heading * piover180) * Speed;
+				YP = -(GLfloat)sin(pitch * piover180) * Speed;
+				ZP = -(GLfloat)cos(heading * piover180) * Speed;
+				GLfloat overallspeed = Hypot(Hypot(XP, YP), ZP) / (ABS(Speed) + 1);
+
 				YP *= overallspeed;
 				XP *= overallspeed;
 				ZP *= overallspeed;
 
-				XPOS += XP/30;
-				YPOS += YP/30;
-				ZPOS += ZP/30;
-                
-        if (keys['M'] && !mp)
-        {
- 				  mp=TRUE;
-				  multitexture=!multitexture;                   
-        }
+				XPOS += XP / 30;
+				YPOS += YP / 30;
+				ZPOS += ZP / 30;
+
+				if (keys['M'] && !mp)
+				{
+					mp = TRUE;
+					multitexture = !multitexture;
+				}
 
 				if (!keys['M'])
 				{
-					mp=FALSE;
+					mp = FALSE;
 				}
 
-        if (keys['L'] && !lp)
-        {
- 				  lp=TRUE;
-				  water=!water;                   
-        }
+				if (keys['L'] && !lp)
+				{
+					lp = TRUE;
+					water = !water;
+				}
 
 				if (!keys['L'])
 				{
-					lp=FALSE;
+					lp = FALSE;
 				}
 
-        if (keys['W'] && !wp)
-        {
- 				  wp=TRUE;
-				  wireframe=!wireframe;                   
-        }
+				if (keys['W'] && !wp)
+				{
+					wp = TRUE;
+					wireframe = !wireframe;
+				}
 
 				if (!keys['W'])
 				{
-					wp=FALSE;
+					wp = FALSE;
 				}
 
-        if (keys['F'] && !fp)
-        {
- 				  fp=TRUE;
-				  framerate_limit=!framerate_limit;
-        }
+				if (keys['F'] && !fp)
+				{
+					fp = TRUE;
+					framerate_limit = !framerate_limit;
+				}
 
 				if (!keys['F'])
 				{
-					fp=FALSE;
+					fp = FALSE;
 				}
 
-        if (keys['S']) // HOLD DOWN 'S' TO TAKE CONTINUOUS SCREENSHOTS
-        {
-  			  SaveScreenshot();
-        }
+				if (keys['S']) // HOLD DOWN 'S' TO TAKE CONTINUOUS SCREENSHOTS
+				{
+					SaveScreenshot();
+				}
 
-        if (keys[VK_ADD] && !aq)
-        {                 
-          aq=TRUE;
-          if (quality <= 1) quality = 1;
-          else quality--;    
-        }
-        
+				if (keys[VK_ADD] && !aq)
+				{
+					aq = TRUE;
+					if (quality <= 1) quality = 1;
+					else quality--;
+				}
+
 				if (!keys[VK_ADD])
-        {
-          aq=FALSE;                    
-        }
+				{
+					aq = FALSE;
+				}
 
-        if (keys[VK_SUBTRACT] && !sq)
-        {                 
-          sq=TRUE;
-          if (quality >= 8) quality = 8;
-          else quality++;    
-        }
+				if (keys[VK_SUBTRACT] && !sq)
+				{
+					sq = TRUE;
+					if (quality >= 8) quality = 8;
+					else quality++;
+				}
 
-        if (!keys[VK_SUBTRACT])
-        {
-          sq=FALSE;                    
-        }
+				if (!keys[VK_SUBTRACT])
+				{
+					sq = FALSE;
+				}
 
-        if(keys[VK_NEXT])
-        {
-					yptrans2+=0.05f;
-          if (yptrans2 > 0) yptrans2*=0.9f;
-        }
+				if (keys[VK_NEXT])
+				{
+					yptrans2 += 0.05f;
+					if (yptrans2 > 0) yptrans2 *= 0.9f;
+				}
 
-        if(keys[VK_PRIOR])
-        {
-					yptrans2-=0.05f;
-          if (yptrans2 < -12) yptrans2*=0.99f;
-        }
+				if (keys[VK_PRIOR])
+				{
+					yptrans2 -= 0.05f;
+					if (yptrans2 < -12) yptrans2 *= 0.99f;
+				}
 			}
 		}
 	}
